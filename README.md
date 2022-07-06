@@ -1,2 +1,2 @@
-# Greedy-Community-Detection
-An implementation of greedy-based algorithms for community detection (on graphs) in Julia
+# Centrality-Community-Detection
+An implementation of a betwenness centrality-based algorithms for community detection (on graphs) in Python and Julia
