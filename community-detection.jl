@@ -13,9 +13,10 @@ such structure. These algorithms however are computationally demanding, which li
 their application to small networks [1].
 
 The goal is to implement Newman algorithm which improves on previous algorithms and
-allows the study of larger networks scaling like O(nm^2)[1]. We then implement the
-Clauset-Newman-Moore algorithm which, by using an improved data structure and some
-ingenious calculation of modularity, is able to achieve a time complexity of O(nmlogm) [2].
+allows the study of larger networks -- with time complexity of O(nm^2)[1]. We then
+implement the Clauset-Newman-Moore algorithm which, by using an improved data structure
+and some ingenious calculation of modularity, is able to achieve a time complexity
+of O(nmlogm) [2].
 
 [1] Newman, M.E.J., 2004. Fast algorithm for detecting community structure in networks.
     Phys. Rev. E 69, 066133. https://doi.org/10.1103/PhysRevE.69.066133
@@ -24,6 +25,16 @@ ingenious calculation of modularity, is able to achieve a time complexity of O(n
     large networks. Phys. Rev. E 70, 066111. https://doi.org/10.1103/PhysRevE.70.066111
 
 **Newman Algorithm**
+The algorithm consists in a greedy optimization of the modularity, a quality function that
+describes how meaningful is a given community division. The algorithm is given by the
+following steps:
+
+    1. Each node is set to a different community (thus at this point we have n communities)
+    2. Pairs of community are repeatedly joined by choosing the greatest increase (or smaller
+        decrease) of modularity.
+    3. The algorithm stops when there is only one community left and a dendogram is produced
+    4. By cutting through the dendogram we can choose the level at which the division produced
+        an overall maximum of modularity
 
 **Clauset-Newman-Moore Algorithm**
 
