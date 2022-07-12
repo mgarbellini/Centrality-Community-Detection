@@ -6,14 +6,20 @@
 Girvan-Newman algorithm for community detection in networks
 """
 from collections import deque
+import random
+import numpy as np
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 class Graph:
     """Graph class based on adjacency list implemented with dictionaries"""
 
     def __init__(self):
         self.adj_list = {}
+        self.adj_matrix = None
         self.community_structure = {}
         self.num_components = None
+        self.num_nodes = None
 
     def __iter__(self):
         return iter(self.adj_list.keys())
@@ -24,6 +30,8 @@ class Graph:
     def load_adj_list(self, adj_list):
         self.adj_list = adj_list
         self.community_structure = dict.fromkeys(self.adj_list, 0)
+        self.num_nodes = len(self.adj_list)
+
 
     def add_edge(self, v, w):
         if v not in self.adj_list:
@@ -62,23 +70,57 @@ class Graph:
 
         self.num_components = component
 
-def girvan_newman_community_detection():
+    def get_edges(self):
+        edges = []
+        for node in self.adj_list:
+            for neighbour in self.adj_list[node]:
+                edges.append((node, neighbour))
 
 
-    mx = max(betweenness.values())
-    max_keys = [k for k, v in betweenness.items() if v == mx]
-    if len(max_keys) > 2:
-        most_between_edge = random.choice(max_keys)
-    else:
-        most_between_edge = max_keys[0]
+        return edges
 
-    return
+def girvan_newman_community_detection(G):
+
+    # assess the graph before running the algorithm
+    G.connected_components()
+    community_structure = [G.community_structure]
+    number_of_communities = [G.num_components]
+    modularity = compute_modularity(G)
+    print("Modularity: ", modularity, "   -   Communities: ", G.num_components)
+
+
+    iter = 0
+    # until we get single node community
+    while len(G.get_edges()) > 0:
+
+        iter+= 1
+        print("# # # # # # iteration ", iter, " # # # # # #")
+
+        # computes betweenness for the graph
+        betweenness = edge_betweenness_centrality(G)
+
+        # find most valuable/between edge
+        edge_to_be_removed = most_between_edge(betweenness)
+
+        # remove most between edge
+        G.remove_edge(edge_to_be_removed[0], edge_to_be_removed[1])
+
+        # find new modularity
+        modularity = compute_modularity(G)
+
+        # add new partition dictionary to communities list
+        G.connected_components()
+        community_structure.append(G.community_structure)
+        number_of_communities.append(G.num_components)
+
+        print("Modularity: ", modularity, "   -   Communities: ", G.num_components)
+
 
 def edge_betweenness_centrality(G):
     """Computes the edge betweenness centrality by running modified a shortest
     path algorithm."""
+    betweenness = dict.fromkeys(G.get_edges(), 0.0)
 
-    betweenness = dict.fromkeys(G.get_edges, 0.0)
 
     for node in G:
         # use BFS for shortest path from source s to all other nodes
@@ -88,7 +130,8 @@ def edge_betweenness_centrality(G):
         betweenness = accumulate_betweenness(betweenness, S, P, sigma, node)
 
     # normalize betweenness for undirected graphs
-    betwenness *= 0.5
+    for edge in betweenness:
+        betweenness[edge] *= 0.5
 
     #return betweenness
     return betweenness
@@ -101,26 +144,12 @@ def accumulate_betweenness(betweenness, S, P, sigma, s):
         coeff = (1 + delta[w]) / sigma[w]
         for v in P[w]:
             c = sigma[v] * coeff
-            if (v, w) not in betweenness:
-                betweenness[(w, v)] += c
-            else:
-                betweenness[(v, w)] += c
+            betweenness[(w, v)] += c
+            betweenness[(v, w)] += c
             delta[v] += c
-        if w != s:
-            betweenness[w] += delta[w]
     return betweenness
 
-
-
-"""edge betweenness function"""
-def _edge_betweenness_centrality(G, k=None, normalized=True):
-
-
-
-
-
-
-def _single_source_shortest_path_basic(G, s):
+def shortest_path_bfs(G, s):
     S = []
     P = {}
     for v in G:
@@ -142,4 +171,63 @@ def _single_source_shortest_path_basic(G, s):
             if D[w] == Dv + 1:  # this is a shortest path, count paths
                 sigma[w] += sigmav
                 P[w].append(v)  # predecessors
-    return S, P, sigma, D
+    return S, P, sigma
+
+def most_between_edge(betweenness):
+
+    mx = max(betweenness.values())
+    max_keys = [k for k, v in betweenness.items() if v == mx]
+    if len(max_keys) > 2:
+        between_edge = random.choice(max_keys)
+    else:
+        between_edge = max_keys[0]
+
+    return between_edge
+
+def compute_modularity(G):
+    #temporary map for conversion between letters and numbers
+    map = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'G'}
+
+    Q = 0
+    m = np.sum(G.adj_matrix)/2
+    k = np.sum(G.adj_matrix, axis = 0)
+    for i in range(len(G.adj_matrix[0])):
+        for j in range(len(G.adj_matrix[0])):
+
+            # only if both vertices belong to same community
+
+            if G.community_structure[map[i]] == G.community_structure[map[j]]:
+
+                Q += G.adj_matrix[i][j] - k[i]*k[j]/m/2
+                
+    return np.round(Q/m/2, 5)
+
+
+
+
+
+
+
+test_adj_list = {
+        "A" : ["B", "C"],
+        "B" : ["C", "A"],
+        "C" : ["A", "B", "D"],
+        "D" : ["C", "E", "F"],
+        "E" : ["D"],
+        "F" : ["D", "G"],
+        "G" : ["F"]
+        }
+test_adj_matrix = np.array([ [0,1,1,0,0,0,0],
+                    [1,0,1,0,0,0,0],
+                    [1,1,0,1,0,0,0],
+                    [0,0,1,0,1,1,0],
+                    [0,0,0,1,0,0,0],
+                    [0,0,0,1,0,0,1],
+                    [0,0,0,0,0,1,0]])
+
+
+graph = Graph()
+graph.load_adj_list(test_adj_list)
+graph.adj_matrix = test_adj_matrix
+
+girvan_newman_community_detection(graph)

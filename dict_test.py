@@ -83,6 +83,7 @@ test = Graph()
 test.load_adj_list(graph)
 test.remove_edge("D", "F")
 
+"""
 betweenness = dict.fromkeys(test.get_edges(), 0.0)
 betweenness[('A', 'B')] = 1.0
 betweenness[('B', 'A')] = 1.0
@@ -96,7 +97,7 @@ if len(max_keys) > 2:
     most_between_edge = random.choice(max_keys)
 else:
     most_between_edge = max_keys[0]
-
+"""
 
 #most_between_edge = max(betweenness, key=betweenness.get)
 #print(most_between_edge)
