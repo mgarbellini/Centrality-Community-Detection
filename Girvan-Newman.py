@@ -32,10 +32,9 @@ class Graph:
         self.community_structure = dict.fromkeys(self.adj_list, 0)
         self.num_nodes = len(self.adj_list)
 
-
     def add_edge(self, v, w):
         if v not in self.adj_list:
-            self.community_strucuture.update({v: 0})
+            self.community_structure.update({v: 0})
             self.adj_list.update({v:[w]})
             if w not in self.adj_list:
                 self.adj_list.update({w:[v]})
@@ -79,6 +78,25 @@ class Graph:
 
         return edges
 
+    def update_adj_matrix(self):
+
+        adj_matrix = np.zeros((self.num_nodes, self.num_nodes))
+        for node in self.adj_list:
+            for neighbour in self.adj_list[node]:
+                adj_matrix[node-1][neighbour-1] = 1
+                adj_matrix[neighbour-1][node-1] = 1
+
+        self.adj_matrix = adj_matrix
+
+    def read_from_file(self, filename):
+        with open(filename) as file:
+            for line in file:
+                edge = line.split()
+                self.add_edge(int(edge[0])+1, int(edge[1])+1)
+
+        self.num_nodes = len(self.adj_list)
+        self.update_adj_matrix()
+
 def girvan_newman_community_detection(G):
 
     # assess the graph before running the algorithm
@@ -114,7 +132,6 @@ def girvan_newman_community_detection(G):
         number_of_communities.append(G.num_components)
 
         print("Modularity: ", modularity, "   -   Communities: ", G.num_components)
-
 
 def edge_betweenness_centrality(G):
     """Computes the edge betweenness centrality by running modified a shortest
@@ -185,6 +202,19 @@ def most_between_edge(betweenness):
     return between_edge
 
 def compute_modularity(G):
+    Q = 0
+    m = float(np.sum(G.adj_matrix))/2
+    k = np.sum(G.adj_matrix, axis = 0)
+    for i in range(len(G.adj_matrix[0])):
+        for j in range(len(G.adj_matrix[0])):
+
+            # only if both vertices belong to same community
+            if G.community_structure[i+1] == G.community_structure[j+1]:
+                Q += G.adj_matrix[i][j] - k[i]*k[j]/m/2
+
+    return np.round(Q/m/2, 7)
+
+def compute_modularity_letters(G):
     #temporary map for conversion between letters and numbers
     map = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'G'}
 
@@ -199,35 +229,10 @@ def compute_modularity(G):
             if G.community_structure[map[i]] == G.community_structure[map[j]]:
 
                 Q += G.adj_matrix[i][j] - k[i]*k[j]/m/2
-                
+
     return np.round(Q/m/2, 5)
 
-
-
-
-
-
-
-test_adj_list = {
-        "A" : ["B", "C"],
-        "B" : ["C", "A"],
-        "C" : ["A", "B", "D"],
-        "D" : ["C", "E", "F"],
-        "E" : ["D"],
-        "F" : ["D", "G"],
-        "G" : ["F"]
-        }
-test_adj_matrix = np.array([ [0,1,1,0,0,0,0],
-                    [1,0,1,0,0,0,0],
-                    [1,1,0,1,0,0,0],
-                    [0,0,1,0,1,1,0],
-                    [0,0,0,1,0,0,0],
-                    [0,0,0,1,0,0,1],
-                    [0,0,0,0,0,1,0]])
-
-
-graph = Graph()
-graph.load_adj_list(test_adj_list)
-graph.adj_matrix = test_adj_matrix
-
-girvan_newman_community_detection(graph)
+if __name__ == '__main__':
+    graph = Graph()
+    graph.read_from_file("dolphins.txt")
+    girvan_newman_community_detection(graph)

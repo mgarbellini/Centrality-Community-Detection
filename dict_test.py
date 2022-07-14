@@ -83,6 +83,13 @@ test = Graph()
 test.load_adj_list(graph)
 test.remove_edge("D", "F")
 
+
+#reading test
+with open("soc-karate.txt") as file:
+    for line in file:
+        edge = line.split()
+        print(int(edge[0]))
+
 """
 betweenness = dict.fromkeys(test.get_edges(), 0.0)
 betweenness[('A', 'B')] = 1.0
