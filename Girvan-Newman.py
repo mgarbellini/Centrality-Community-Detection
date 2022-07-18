@@ -7,8 +7,10 @@ Girvan-Newman algorithm for community detection in networks
 """
 from collections import deque
 import random
+import time
 import numpy as np
 import logging
+import sys
 logging.basicConfig(level=logging.DEBUG)
 
 class Graph:
@@ -103,8 +105,8 @@ def girvan_newman_community_detection(G):
     G.connected_components()
     community_structure = [G.community_structure]
     number_of_communities = [G.num_components]
-    modularity = compute_modularity(G)
-    print("Modularity: ", modularity, "   -   Communities: ", G.num_components)
+    max_modularity = compute_modularity(G)
+    solution_num_communities = number_of_communities
 
 
     iter = 0
@@ -112,7 +114,6 @@ def girvan_newman_community_detection(G):
     while len(G.get_edges()) > 0:
 
         iter+= 1
-        print("# # # # # # iteration ", iter, " # # # # # #")
 
         # computes betweenness for the graph
         betweenness = edge_betweenness_centrality(G)
@@ -131,7 +132,14 @@ def girvan_newman_community_detection(G):
         community_structure.append(G.community_structure)
         number_of_communities.append(G.num_components)
 
-        print("Modularity: ", modularity, "   -   Communities: ", G.num_components)
+        # save if improvement
+        if modularity > max_modularity:
+            max_modularity = modularity
+            solution_num_communities = G.num_components
+
+
+    # printing final solution
+    print('Modularity: ', max_modularity, ' - # Communities: ', solution_num_communities)
 
 def edge_betweenness_centrality(G):
     """Computes the edge betweenness centrality by running modified a shortest
@@ -214,25 +222,11 @@ def compute_modularity(G):
 
     return np.round(Q/m/2, 7)
 
-def compute_modularity_letters(G):
-    #temporary map for conversion between letters and numbers
-    map = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'G'}
-
-    Q = 0
-    m = np.sum(G.adj_matrix)/2
-    k = np.sum(G.adj_matrix, axis = 0)
-    for i in range(len(G.adj_matrix[0])):
-        for j in range(len(G.adj_matrix[0])):
-
-            # only if both vertices belong to same community
-
-            if G.community_structure[map[i]] == G.community_structure[map[j]]:
-
-                Q += G.adj_matrix[i][j] - k[i]*k[j]/m/2
-
-    return np.round(Q/m/2, 5)
-
 if __name__ == '__main__':
+
     graph = Graph()
-    graph.read_from_file("dolphins.txt")
+    graph.read_from_file(sys.argv[1])
+    tic = time.perf_counter()
     girvan_newman_community_detection(graph)
+    toc = time.perf_counter()
+    print(toc-tic)

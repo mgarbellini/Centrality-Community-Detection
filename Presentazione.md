@@ -6,11 +6,26 @@ Title: Finding and evaluating community structure in networks
 # % % Slide 01: Outline
 #
 # % % Slide 02: Motivation
-#
+Biological, social, technological, and information networks can be studied as graphs, and graph analysis has become crucial  to understand the features of these systems.
+
+Graphs representing real systems are not regular like, e.g. lattices.
+In a random graph, the distribution of edges among the vertices is highly homogeneous. Real networks are not random graph, as they display big inhomogeneities, revealing a high level of order and organization.
+
+The degree distribution is broad, with a tail that often follows a power law: therefore, many vertices with low degree coexist with some vertices with large degree. Furthermore, the distribution of edges is not only globally, but also locally inhomogeneous, with high concentrations of edges within special groups of vertices, and low concentrations between these groups. This feature of real networks is called community structure.
+
+Another important aspect related to community structure is the hierarchical organization displayed by most networked systems in the real world. Real networks are usually composed by communities including smaller communities, which in turn include smaller communities
+
+The aim of community detection in graphs is to identify the clusters and, possibly, their hierarchical organization, by only using the information encoded in the graph topology.
+
 # % % Slide 03: Introduction to networks (1)
+
+A graph G is a pair of sets (V, E), where V is a set of vertices or nodes and E is a subset of V 2, the set of unordered pairs of elements of V . The elements of E are called edges or links, the two vertices that identify an edge are called endpoints. An edge is adjacent to each of its endpoints.
+
+
 #
 # % % Slide 04: Introduction to networks (2)
-#
+We will only consider unweighted and undirected graphs, although the generalization to weighted and directed graphs is fairly straight forward and appropriate algorithms for dealing with them are present in literature.
+
 # # # # # **COMMUNITIES**
 #
 # % % Slide 05: What is a community? (1)
@@ -107,11 +122,13 @@ If two communities are joined by only a few inter-communities edges, then all pa
 Let us note that the recalculation step is the most important feature of the algorithm, since the network without the most between edge is now a different network with a different structure.
 
 
-# % % Slide 14: Shortest path with BFS
+# % % Slide 14: Shortest path with modified BFS
 The shortest paths can be found using a breadth-first search.
 What is breadth-first search?
 Is an algorithm for searching a tree data structure for a node that satisfies a given property. It starts at the tree root and explores all nodes at the present depth prior to moving on to the nodes at the next depth level.
 It requires a queue to keep track of the child nodes that were encountered but not yet explored.
+
+In a single run all shortest path from vertex s to any other vertex is found with time complexity O(m), where m is the number of edges
 
 # % % Slide 15: Shortest path - Simple case
 The simple case serves to illustrate the basic principle of the algorithm.
@@ -136,7 +153,7 @@ To calculate correctly what fraction of the paths flow along each edge in the ne
 Physically, the weight on a vertex i represents the number of distinct paths from the source vertex to i.
 These weights are precisely what we need to calculate our edge betweennesses, because if two vertices i and j are connected, with j farther than i from the source s, then the fraction of a geodesic path from j through i to s is given by wi/wj. Thus, to calculate the contribution to edge betweenness from all shortest paths starting at s, we need only carry out the following steps:
 
-(1) Find every “leaf” vertex t, i.e., a vertex such that no paths from s to other vertices go though t.
+(1) Find every “leaf” vertex t, i .e., a vertex such that no paths from s to other vertices go though t.
 (2) For each vertex i neighboring t assign a score to the edge from t to i of wi/wt.
 (3) Now, starting with the edges that are farthest from the source vertex s—lower down in a diagram such as Fig. 4b—work up towards s. To the edge from vertex i to vertex j, with j being farther from s than i, assign a score that is 1 plus the sum of the scores on the neighboring edges immediately below it (i.e., those with which it shares a common vertex), all multiplied by wi/wj.
 (4) Repeat from step 3 until vertex s is reached.
@@ -161,13 +178,13 @@ The final result can be displayed through a dendrogram where partition are found
 
 Assessing the correctness of the GN algorithm is a tricky task
 
-(1) Communities are not really well defined. Thus we're not looking for something whose form is quell known. The so called 'correct output' does not exist and as mentioned before the chosen solution depends on the scope of the study
+(1) Communities are not really well defined. Thus we're not looking for something whose form is well known. The so called 'correct output' does not exist and as mentioned before the chosen solution depends on the scope of the study
 
 (2) The process of finding the solution to the community detection problem only happens after the iterative partition of the graph, thus one cannot apply any loop invariant properties of the algorithm.
 
 Therefore we can do the following
 
-(1) Show that the core algorithmic feature -- the shortest path -- is indeed correct
+(1) Show that the core algorithmic feature -- the modified shortest path -- is indeed correct
 (2) Run the algorithm on synthetic networks or real networks whose community structure is known a priori. In this manner one can compare the fraction of nodes correctly identified in each community.
 
 
@@ -183,7 +200,7 @@ We have generated a large number of graphs with n=128 divided into four communit
 The result can be seen in terms of the maximum value of modularity corresponding to the division into four expected communities and in the plot showing the fraction of vertices classified correctly as a function of the mean number of vertices .... (continues on paper)
 
 # % % Slide 25: Time complexity of the algorithm
-#
+
 # % % Slide 26: Space complexity (?)
 #
 # # # # # CODE and IRL BENCHMARKS
