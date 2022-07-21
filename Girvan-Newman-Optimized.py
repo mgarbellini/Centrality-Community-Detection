@@ -9,101 +9,15 @@ from collections import deque
 import random
 import time
 import numpy as np
+import logging
 import sys
-from tqdm import tqdm
 
-class Graph:
-    """Graph class based on adjacency list implemented with dictionaries"""
 
-    def __init__(self):
-        self.adj_list = {}
-        self.adj_matrix = None
-        self.community_structure = {}
-        self.num_components = None
-        self.num_nodes = None
-        self.num_edges = None
-
-    def __iter__(self):
-        return iter(self.adj_list.keys())
-
-    def __getitem__(self, n):
-        return self.adj_list[n]
-
-    def load_adj_list(self, adj_list):
-        self.adj_list = adj_list
-        self.community_structure = dict.fromkeys(self.adj_list, 0)
-        self.num_nodes = len(self.adj_list)
-
-    def add_edge(self, v, w):
-        if v not in self.adj_list:
-            self.community_structure.update({v: 0})
-            self.adj_list.update({v:[w]})
-            if w not in self.adj_list:
-                self.adj_list.update({w:[v]})
-            else:
-                self.adj_list[w].append(v)
-        elif w not in self.adj_list:
-            self.community_structure.update({w: 0})
-            self.adj_list[v].append(w)
-            self.adj_list.update({w:[v]})
-        else:
-            self.adj_list[v].append(w)
-            self.adj_list[w].append(v)
-
-    def remove_edge(self, v, w):
-        del self.adj_list[v][self.adj_list[v].index(w)]
-        del self.adj_list[w][self.adj_list[w].index(v)]
-
-        self.num_edges -= 1
-
-    def connected_components(self):
-        seen = set()
-        component = 0
-        for node in self.adj_list:
-            if node not in seen:
-                component += 1
-                Q = deque([node])
-                while Q:
-                    v = Q.popleft()
-                    self.community_structure[v] = component
-                    seen.add(v)
-                    for w in self.adj_list[v]:
-                        if w not in seen:
-                            Q.append(w)
-
-        self.num_components = component
-
-    def get_edges(self):
-        edges = []
-        for node in self.adj_list:
-            for neighbour in self.adj_list[node]:
-                edges.append((node, neighbour))
-
-        self.num_edges = len(edges)/2
-        return edges
-
-    def update_adj_matrix(self):
-
-        adj_matrix = np.zeros((self.num_nodes, self.num_nodes))
-        for node in self.adj_list:
-            for neighbour in self.adj_list[node]:
-                adj_matrix[node-1][neighbour-1] = 1
-                adj_matrix[neighbour-1][node-1] = 1
-
-        self.adj_matrix = adj_matrix
-
-    def read_from_file(self, filename, key = 0):
-        with open(filename) as file:
-            for line in file:
-                edge = line.split()
-
-                if key == 1:
-                    self.add_edge(int(edge[0]), int(edge[1]))
-                else:
-                    self.add_edge(int(edge[0])+1, int(edge[1])+1)
-
-        self.num_nodes = len(self.adj_list)
-        self.update_adj_matrix()
+import numpy as np
+from numba import njit
+from numba import int32, int64, float64
+from numba import types, typed, typeof, deferred_type
+from numba.experimental import jitclass
 
 
 def girvan_newman_community_detection(G):
@@ -111,16 +25,16 @@ def girvan_newman_community_detection(G):
 
     # assess the graph before running the algorithm
     G.connected_components()
-    edges = G.get_edges()
     community_structure = [G.community_structure]
     number_of_communities = [G.num_components]
     max_modularity = compute_modularity(G)
     solution_num_communities = number_of_communities
 
-
-
+    iter = 0
     # until we get single node community
-    while G.num_edges > 0:
+    while len(G.get_edges()) > 0:
+
+        iter+= 1
 
         # computes betweenness for the graph
         betweenness = edge_betweenness_centrality(G)
@@ -144,10 +58,9 @@ def girvan_newman_community_detection(G):
             max_modularity = modularity
             solution_num_communities = G.num_components
 
-        print('Modularity: ', modularity, ' - # Communities: ', G.num_components)
 
     # printing final solution
-    print('FINAL - Modularity: ', max_modularity, ' - # Commuities: ', solution_num_communities)
+    print('Modularity: ', max_modularity, ' - # Communities: ', solution_num_communities)
 
 
 def edge_betweenness_centrality(G):
@@ -222,7 +135,6 @@ def most_between_edge(betweenness):
 
 
 def compute_modularity(G):
-
     Q = 0
     m = float(np.sum(G.adj_matrix))/2
     k = np.sum(G.adj_matrix, axis = 0)
@@ -235,9 +147,38 @@ def compute_modularity(G):
 
     return np.round(Q/m/2, 7)
 
+@njit
+def empty_list():
+    l = [int64(10)]
+    l.clear()
+    return l
 
+
+specnode =[
+    ('neighbor', types.List(int64)),
+    ('id', int64),
+    ]
+@jitclass(specnode)
+class Node:
+    """Node class containing list of neighbors"""
+    def __init__(self, id):
+        self.id = id
+        self.neighbor = empty_list()
+"""
+specgraph = [
+    ('n', int32),
+    ('m', int32),
+    ('node', types.ListType((Node.class_type.instance_type)),
+    ]
+
+@jitclass(specgraph)
+class Graph:
+"""
 if __name__ == '__main__':
 
-    graph = Graph()
-    graph.read_from_file(sys.argv[1], 1)
-    girvan_newman_community_detection(graph)
+
+    nodo1 = Node(1)
+    neighbors = typed.List(int64)
+    neighbors.append(3)
+    nodo1.neighbor= neighbors
+    print(nodo1.neighbor)
